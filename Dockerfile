@@ -5,7 +5,7 @@ FROM node:20-alpine AS frontend-builder
 
 # Install PHP CLI and required extensions for Wayfinder
 # Wayfinder needs PHP to run artisan commands during build
-# We need ALL extensions including pcntl, session, curl, posix, and iconv for Laravel to work
+# We need ALL extensions including pcntl, session, curl, posix, iconv, and sqlite for Laravel to work
 RUN apk add --no-cache \
     php-cli \
     php-json \
@@ -20,6 +20,8 @@ RUN apk add --no-cache \
     php-fileinfo \
     php-pdo \
     php-pdo_mysql \
+    php-pdo_sqlite \
+    php-sqlite3 \
     php-pcntl \
     php-session \
     php-curl \
@@ -80,11 +82,12 @@ COPY resources/ ./resources/
 COPY vite.config.ts tsconfig.json components.json ./
 COPY public/ ./public/
 
-# Configure environment for build (avoid database requirements)
-RUN echo "DB_CONNECTION=array" >> .env || true
-RUN echo "CACHE_DRIVER=array" >> .env || true
-RUN echo "SESSION_DRIVER=array" >> .env || true
-RUN echo "QUEUE_CONNECTION=sync" >> .env || true
+# Configure environment for build
+# Note: MySQL connection will be configured via docker-compose environment variables
+# For build stage, we'll use array drivers to avoid database requirements
+RUN echo "CACHE_DRIVER=array" >> .env \
+    && echo "SESSION_DRIVER=array" >> .env \
+    && echo "QUEUE_CONNECTION=sync" >> .env
 
 # Pre-generate Wayfinder types to avoid build-time errors
 # This helps diagnose any issues before npm run build
