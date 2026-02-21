@@ -13,7 +13,7 @@ export default defineConfig({
         }),
         tailwindcss(),
         wayfinder({
-            generate: false, // منع توليد Wayfinder أثناء npm build - سيتم توليده يدوياً بعد تشغيل الـ container
+            skipBuild: true, // هنا بنعطل Wayfinder أثناء build - سيتم توليده تلقائياً في docker-entrypoint.sh
         }),
         vue({
             template: {
