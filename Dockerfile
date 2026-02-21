@@ -33,8 +33,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install Node dependencies
-RUN npm install
+# Install Node dependencies (npm ci أفضل في Docker - يزيل node_modules القديمة)
+RUN npm ci
 
 # Copy Composer files (needed for Wayfinder to work)
 COPY composer*.json ./
