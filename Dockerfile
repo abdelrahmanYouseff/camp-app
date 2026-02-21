@@ -91,8 +91,8 @@ RUN echo "CACHE_DRIVER=file" >> .env \
     && echo "QUEUE_CONNECTION=sync" >> .env
 
 # Build frontend assets
-# Note: Wayfinder generation is disabled in vite.config.ts (generate: false)
-# It will be generated manually after container starts with: php artisan wayfinder:generate --with-form
+# Disable Wayfinder generation during build (will be generated after container starts)
+ENV WAYFINDER_SKIP_BUILD=true
 RUN npm run build
 
 # Stage 2: PHP FPM Alpine for Laravel runtime

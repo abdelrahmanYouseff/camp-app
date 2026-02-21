@@ -31,6 +31,10 @@ if [ ! -L public/storage ]; then
     php artisan storage:link || echo "Storage link may already exist"
 fi
 
+# Generate Wayfinder types (after MySQL is ready and storage paths exist)
+echo "Generating Wayfinder types..."
+php artisan wayfinder:generate --with-form || echo "Wayfinder generation failed, will retry on next request"
+
 # Clear and cache config (only in production)
 if [ "$APP_ENV" = "production" ]; then
     echo "Optimizing application..."
