@@ -48,6 +48,11 @@ COPY database/ ./database/
 COPY routes/ ./routes/
 COPY artisan ./
 
+# Copy additional files that might be needed
+COPY public/index.php ./public/index.php || true
+COPY phpunit.xml* ./ || true
+COPY pint.json* ./ || true
+
 # Copy .env file if it exists, or create a minimal one for build
 COPY .env* ./
 RUN if [ ! -f .env ]; then \
@@ -60,7 +65,8 @@ RUN if [ ! -f .env ]; then \
 
 # Install ALL Composer dependencies (including dev) needed for Wayfinder
 # Wayfinder requires a fully functional Laravel installation to run artisan commands
-RUN composer install --prefer-dist --no-interaction --no-scripts
+# Install with scripts to register service providers
+RUN composer install --prefer-dist --no-interaction
 
 # Generate autoloader (needed for artisan commands)
 RUN composer dump-autoload --optimize
@@ -78,6 +84,16 @@ RUN php artisan key:generate --force || true
 COPY resources/ ./resources/
 COPY vite.config.ts tsconfig.json components.json ./
 COPY public/ ./public/
+
+# Configure environment for build (avoid database requirements)
+RUN echo "DB_CONNECTION=array" >> .env || true
+RUN echo "CACHE_DRIVER=array" >> .env || true
+RUN echo "SESSION_DRIVER=array" >> .env || true
+RUN echo "QUEUE_CONNECTION=sync" >> .env || true
+
+# Pre-generate Wayfinder types to avoid build-time errors
+# This helps diagnose any issues before npm run build
+RUN php artisan wayfinder:generate --with-form 2>&1 || echo "Wayfinder pre-generation failed, will be generated during build"
 
 # Build frontend assets (Wayfinder will use PHP CLI here)
 RUN npm run build
