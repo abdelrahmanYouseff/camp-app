@@ -5,7 +5,7 @@ FROM node:20-alpine AS frontend-builder
 
 # Install PHP CLI and required extensions for Wayfinder
 # Wayfinder needs PHP to run artisan commands during build
-# We need ALL extensions including pcntl, session, and curl for Laravel to work
+# We need ALL extensions including pcntl, session, curl, posix, and iconv for Laravel to work
 RUN apk add --no-cache \
     php-cli \
     php-json \
@@ -22,7 +22,9 @@ RUN apk add --no-cache \
     php-pdo_mysql \
     php-pcntl \
     php-session \
-    php-curl
+    php-curl \
+    php-posix \
+    php-iconv
 
 WORKDIR /app
 
