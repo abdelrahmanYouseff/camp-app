@@ -5,6 +5,7 @@ FROM node:20-alpine AS frontend-builder
 
 # Install PHP CLI and required extensions for Wayfinder
 # Wayfinder needs PHP to run artisan commands during build
+# We need ALL extensions including pcntl, session, and curl for Laravel to work
 RUN apk add --no-cache \
     php-cli \
     php-json \
@@ -18,7 +19,10 @@ RUN apk add --no-cache \
     php-dom \
     php-fileinfo \
     php-pdo \
-    php-pdo_mysql
+    php-pdo_mysql \
+    php-pcntl \
+    php-session \
+    php-curl
 
 WORKDIR /app
 
@@ -34,11 +38,7 @@ COPY composer*.json ./
 # Install Composer in the frontend builder stage
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install minimal Composer dependencies needed for Wayfinder
-# We only need Laravel framework files, not all dependencies
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist || true
-
-# Copy Laravel application files needed for Wayfinder
+# Copy Laravel application files needed for Wayfinder (before composer install)
 COPY app/ ./app/
 COPY bootstrap/ ./bootstrap/
 COPY config/ ./config/
@@ -46,8 +46,31 @@ COPY database/ ./database/
 COPY routes/ ./routes/
 COPY artisan ./
 
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --classmap-authoritative || true
+# Copy .env file if it exists, or create a minimal one for build
+COPY .env* ./
+RUN if [ ! -f .env ]; then \
+    echo "APP_NAME=Laravel" > .env && \
+    echo "APP_ENV=local" >> .env && \
+    echo "APP_KEY=" >> .env && \
+    echo "APP_DEBUG=true" >> .env && \
+    echo "APP_URL=http://localhost" >> .env; \
+    fi
+
+# Install ALL Composer dependencies (including dev) needed for Wayfinder
+# Wayfinder requires a fully functional Laravel installation to run artisan commands
+RUN composer install --prefer-dist --no-interaction --no-scripts
+
+# Generate autoloader (needed for artisan commands)
+RUN composer dump-autoload --optimize
+
+# Create necessary directories and set permissions
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# Generate APP_KEY if not set (needed for Laravel to work)
+RUN php artisan key:generate --force || true
 
 # Copy frontend source files
 COPY resources/ ./resources/
