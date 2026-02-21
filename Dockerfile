@@ -35,6 +35,8 @@ RUN apk add --no-cache \
     nginx \
     supervisor
 
+RUN apk add --no-cache php-cli
+
 # Install PHP extensions
 RUN docker-php-ext-install \
     pdo_mysql \
