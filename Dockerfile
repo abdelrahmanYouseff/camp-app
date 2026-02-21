@@ -48,11 +48,6 @@ COPY database/ ./database/
 COPY routes/ ./routes/
 COPY artisan ./
 
-# Copy additional files that might be needed
-COPY public/index.php ./public/index.php || true
-COPY phpunit.xml* ./ || true
-COPY pint.json* ./ || true
-
 # Copy .env file if it exists, or create a minimal one for build
 COPY .env* ./
 RUN if [ ! -f .env ]; then \
