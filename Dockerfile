@@ -76,29 +76,23 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
     && chown -R node:node storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Generate APP_KEY if not set (needed for Laravel to work)
-RUN php artisan key:generate --force || true
+# Generate APP_KEY (needed for Laravel to work)
+RUN php artisan key:generate --force
 
 # Copy frontend source files
 COPY resources/ ./resources/
 COPY vite.config.ts tsconfig.json components.json ./
 COPY public/ ./public/
 
-# Configure environment for build
-# Use SQLite temporarily for build (Wayfinder needs a database)
-# MySQL will be used in Stage 2 (production)
-RUN touch database/database.sqlite \
-    && echo "DB_CONNECTION=sqlite" >> .env \
-    && echo "DB_DATABASE=/app/database/database.sqlite" >> .env \
-    && echo "CACHE_DRIVER=array" >> .env \
-    && echo "SESSION_DRIVER=array" >> .env \
+# Configure environment for build (keep MySQL settings from .env)
+# Only set cache/session drivers to avoid database requirements during build
+RUN echo "CACHE_DRIVER=file" >> .env \
+    && echo "SESSION_DRIVER=file" >> .env \
     && echo "QUEUE_CONNECTION=sync" >> .env
 
-# Pre-generate Wayfinder types to avoid build-time errors
-# This helps diagnose any issues before npm run build
-RUN php artisan wayfinder:generate --with-form 2>&1 || echo "Wayfinder pre-generation failed, will be generated during build"
-
-# Build frontend assets (Wayfinder will use PHP CLI here)
+# Build frontend assets
+# Note: Wayfinder generation is disabled in vite.config.ts (generate: false)
+# It will be generated manually after container starts with: php artisan wayfinder:generate --with-form
 RUN npm run build
 
 # Stage 2: PHP FPM Alpine for Laravel runtime
