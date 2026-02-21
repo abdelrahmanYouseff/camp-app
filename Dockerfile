@@ -93,6 +93,10 @@ RUN echo "CACHE_DRIVER=array" >> .env \
 # This helps diagnose any issues before npm run build
 RUN php artisan wayfinder:generate --with-form 2>&1 || echo "Wayfinder pre-generation failed, will be generated during build"
 
+# Create Wayfinder cache directory with proper permissions
+RUN mkdir -p storage/framework/cache/wayfinder \
+    && chmod -R 775 storage/framework/cache/wayfinder
+
 # Build frontend assets (Wayfinder will use PHP CLI here)
 RUN npm run build
 
