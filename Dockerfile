@@ -83,9 +83,12 @@ COPY vite.config.ts tsconfig.json components.json ./
 COPY public/ ./public/
 
 # Configure environment for build
-# Note: MySQL connection will be configured via docker-compose environment variables
-# For build stage, we'll use array drivers to avoid database requirements
-RUN echo "CACHE_DRIVER=array" >> .env \
+# Use SQLite temporarily for build (Wayfinder needs a database)
+# MySQL will be used in Stage 2 (production)
+RUN touch database/database.sqlite \
+    && echo "DB_CONNECTION=sqlite" >> .env \
+    && echo "DB_DATABASE=/app/database/database.sqlite" >> .env \
+    && echo "CACHE_DRIVER=array" >> .env \
     && echo "SESSION_DRIVER=array" >> .env \
     && echo "QUEUE_CONNECTION=sync" >> .env
 
