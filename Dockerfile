@@ -70,8 +70,9 @@ RUN composer dump-autoload --optimize
 
 # Create necessary directories and set permissions
 RUN mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache \
+    && mkdir -p storage/logs bootstrap/cache \
+    && mkdir -p storage/framework/cache/wayfinder \
+    && chown -R node:node storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # Generate APP_KEY if not set (needed for Laravel to work)
@@ -95,10 +96,6 @@ RUN touch database/database.sqlite \
 # Pre-generate Wayfinder types to avoid build-time errors
 # This helps diagnose any issues before npm run build
 RUN php artisan wayfinder:generate --with-form 2>&1 || echo "Wayfinder pre-generation failed, will be generated during build"
-
-# Create Wayfinder cache directory with proper permissions
-RUN mkdir -p storage/framework/cache/wayfinder \
-    && chmod -R 775 storage/framework/cache/wayfinder
 
 # Build frontend assets (Wayfinder will use PHP CLI here)
 RUN npm run build
