@@ -31,10 +31,13 @@ class WhatsAppService
             if ($response->successful()) {
                 $templates = $response->json('data', []);
                 
-                // Filter only approved templates
-                return array_values(array_filter($templates, function ($template) {
+                // Filter only approved templates and normalize language to exact code (fixes #132001)
+                return array_values(array_map(function ($template) {
+                    $template['language'] = $template['language']['code'] ?? $template['language'] ?? 'en_US';
+                    return $template;
+                }, array_filter($templates, function ($template) {
                     return $template['status'] === 'APPROVED';
-                }));
+                })));
             }
 
             Log::error('WhatsApp API Error', [
@@ -53,6 +56,18 @@ class WhatsAppService
     }
 
     /**
+     * Normalize language code for WhatsApp API (fixes #132001).
+     * Only expand "en" to "en_US"; pass all other codes from Meta as-is.
+     */
+    protected function normalizeLanguageCode(string $language): string
+    {
+        if ($language === 'en') {
+            return 'en_US';
+        }
+        return $language;
+    }
+
+    /**
      * Send a template message to a phone number
      */
     public function sendTemplate(string $to, string $templateName, string $language = 'en', array $components = []): array
@@ -61,6 +76,8 @@ class WhatsAppService
             // Format phone number (remove + and spaces)
             $to = preg_replace('/[^0-9]/', '', $to);
 
+            $languageCode = $this->normalizeLanguageCode($language);
+
             $payload = [
                 'messaging_product' => 'whatsapp',
                 'to' => $to,
@@ -68,7 +85,8 @@ class WhatsAppService
                 'template' => [
                     'name' => $templateName,
                     'language' => [
-                        'code' => $language,
+                        'policy' => 'deterministic',
+                        'code' => $languageCode,
                     ],
                 ],
             ];
@@ -81,9 +99,38 @@ class WhatsAppService
             $response = Http::withToken($this->accessToken)
                 ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $payload);
 
+            $responseData = $response->json();
+            $isSuccessful = $response->successful();
+            
+            // Log the full response for debugging
+            Log::info('WhatsApp API Response', [
+                'to' => $to,
+                'template' => $templateName,
+                'status_code' => $response->status(),
+                'successful' => $isSuccessful,
+                'response' => $responseData,
+            ]);
+
+            // Check for errors in response even if status is 200
+            if (isset($responseData['error'])) {
+                $errorCode = $responseData['error']['code'] ?? null;
+                Log::error('WhatsApp API Error in Response', [
+                    'to' => $to,
+                    'template' => $templateName,
+                    'language_sent' => $languageCode,
+                    'error' => $responseData['error'],
+                ]);
+                if ((int) $errorCode === 132001) {
+                    Log::warning('132001: Template/language mismatch. Check in Meta: template name exactly "' . $templateName . '", language code "' . $languageCode . '"', [
+                        'payload_template' => $payload['template'],
+                    ]);
+                }
+                $isSuccessful = false;
+            }
+
             return [
-                'success' => $response->successful(),
-                'data' => $response->json(),
+                'success' => $isSuccessful,
+                'data' => $responseData,
                 'status' => $response->status(),
             ];
         } catch (\Exception $e) {
@@ -134,5 +181,32 @@ class WhatsAppService
         }
 
         return $results;
+    }
+
+    /**
+     * Get message status from WhatsApp API
+     */
+    public function getMessageStatus(string $messageId): array
+    {
+        try {
+            $response = Http::withToken($this->accessToken)
+                ->get("{$this->baseUrl}/{$messageId}");
+
+            return [
+                'success' => $response->successful(),
+                'data' => $response->json(),
+                'status' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('WhatsApp Get Message Status Exception', [
+                'message' => $e->getMessage(),
+                'message_id' => $messageId,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }

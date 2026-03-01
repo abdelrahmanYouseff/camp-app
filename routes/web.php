@@ -29,6 +29,8 @@ Route::get('/campaign-status/{campaign}', function (Campaign $campaign) {
             'failed' => $campaign->failed_count,
             'progress' => $campaign->progress,
             'scheduledTime' => $campaign->created_at->toISOString(),
+            'results' => $campaign->results ?? [],
+            'paused_at' => $campaign->paused_at?->toISOString(),
         ],
     ]);
 })->name('campaign-status');
@@ -38,6 +40,9 @@ Route::get('/api/templates', [WhatsAppController::class, 'templates'])->name('ap
 Route::post('/api/campaign/send', [WhatsAppController::class, 'sendCampaign'])->name('api.campaign.send');
 Route::get('/api/campaign/{campaign}', [WhatsAppController::class, 'getCampaignStatus'])->name('api.campaign.status');
 Route::get('/api/campaigns', [WhatsAppController::class, 'getCampaigns'])->name('api.campaigns');
+Route::post('/api/campaign/{campaign}/pause', [WhatsAppController::class, 'pauseCampaign'])->name('api.campaign.pause');
+Route::post('/api/campaign/{campaign}/resume', [WhatsAppController::class, 'resumeCampaign'])->name('api.campaign.resume');
+Route::post('/api/campaign/{campaign}/retry', [WhatsAppController::class, 'retryCampaign'])->name('api.campaign.retry');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');

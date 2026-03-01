@@ -17,8 +17,11 @@ class Campaign extends Model
         'phone_numbers',
         'results',
         'delay_seconds',
+        'max_sends',
         'started_at',
         'completed_at',
+        'paused_at',
+        'last_processed_index',
     ];
 
     protected $casts = [
@@ -26,6 +29,7 @@ class Campaign extends Model
         'results' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'paused_at' => 'datetime',
     ];
 
     /**
@@ -38,5 +42,35 @@ class Campaign extends Model
         }
         
         return (int) round(($this->sent_count + $this->failed_count) / $this->total_recipients * 100);
+    }
+
+    /**
+     * Check if campaign is paused
+     */
+    public function isPaused(): bool
+    {
+        return $this->paused_at !== null;
+    }
+
+    /**
+     * Pause the campaign
+     */
+    public function pause(): void
+    {
+        $this->update([
+            'paused_at' => now(),
+            'status' => 'processing', // Keep as processing to allow resume
+        ]);
+    }
+
+    /**
+     * Resume the campaign
+     */
+    public function resume(): void
+    {
+        $this->update([
+            'paused_at' => null,
+            'status' => 'processing',
+        ]);
     }
 }

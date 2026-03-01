@@ -14,9 +14,22 @@ import {
     Zap,
     TrendingUp,
     AlertCircle,
-    Loader2
+    Loader2,
+    Phone,
+    Ban,
+    Pause,
+    Play,
+    PlayCircle
 } from 'lucide-vue-next';
 import Button from '@/components/ui/button/Button.vue';
+
+type Result = {
+    phone: string;
+    success: boolean;
+    skipped?: boolean;
+    message_id?: string;
+    error?: string;
+};
 
 type Props = {
     campaign: {
@@ -29,6 +42,8 @@ type Props = {
         failed: number;
         progress?: number;
         scheduledTime: string;
+        results?: Result[];
+        paused_at?: string | null;
     };
 };
 
@@ -40,9 +55,14 @@ const liveData = ref({
     failed: props.campaign.failed,
     status: props.campaign.status,
     progress: props.campaign.progress || 0,
+    results: props.campaign.results || [] as Result[],
+    paused_at: props.campaign.paused_at || null,
 });
 
 const isRefreshing = ref(false);
+const isPausing = ref(false);
+const isResuming = ref(false);
+const isRetrying = ref(false);
 
 // Polling interval
 let interval: ReturnType<typeof setInterval> | null = null;
@@ -59,6 +79,8 @@ const fetchStatus = async () => {
                 failed: data.campaign.failed_count,
                 status: data.campaign.status,
                 progress: data.progress,
+                results: data.campaign.results || [],
+                paused_at: data.campaign.paused_at || null,
             };
             
             if (data.campaign.status === 'completed' || data.campaign.status === 'failed') {
@@ -151,6 +173,116 @@ const handleRefresh = async () => {
         isRefreshing.value = false;
     }, 500);
 };
+
+const isPaused = computed(() => {
+    return liveData.value.paused_at !== null;
+});
+
+const canPause = computed(() => {
+    return liveData.value.status === 'processing' && !isPaused.value;
+});
+
+const canResume = computed(() => {
+    return isPaused.value && liveData.value.status === 'processing';
+});
+
+const canRetry = computed(() => {
+    return liveData.value.status === 'pending' || 
+           (liveData.value.status === 'failed' && !isPaused.value);
+});
+
+const handlePause = async () => {
+    if (!canPause.value || isPausing.value) return;
+    
+    isPausing.value = true;
+    try {
+        const response = await fetch(`/api/campaign/${props.campaign.id}/pause`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await fetchStatus();
+        } else {
+            alert('Failed to pause campaign: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error pausing campaign:', error);
+        alert('Failed to pause campaign. Please try again.');
+    } finally {
+        isPausing.value = false;
+    }
+};
+
+const handleResume = async () => {
+    if (!canResume.value || isResuming.value) return;
+    
+    isResuming.value = true;
+    try {
+        const response = await fetch(`/api/campaign/${props.campaign.id}/resume`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await fetchStatus();
+            // Restart polling if needed
+            if (!interval && (liveData.value.status === 'processing' || liveData.value.status === 'pending')) {
+                interval = setInterval(fetchStatus, 2000);
+            }
+        } else {
+            alert('Failed to resume campaign: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error resuming campaign:', error);
+        alert('Failed to resume campaign. Please try again.');
+    } finally {
+        isResuming.value = false;
+    }
+};
+
+const handleRetry = async () => {
+    if (!canRetry.value || isRetrying.value) return;
+    
+    isRetrying.value = true;
+    try {
+        const response = await fetch(`/api/campaign/${props.campaign.id}/retry`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await fetchStatus();
+            // Restart polling if needed
+            if (!interval && (liveData.value.status === 'processing' || liveData.value.status === 'pending')) {
+                interval = setInterval(fetchStatus, 2000);
+            }
+            alert('Campaign job dispatched successfully!');
+        } else {
+            alert('Failed to start campaign: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error retrying campaign:', error);
+        alert('Failed to start campaign. Please try again.');
+    } finally {
+        isRetrying.value = false;
+    }
+};
 </script>
 
 <template>
@@ -182,6 +314,46 @@ const handleRefresh = async () => {
                             <RefreshCw :class="['h-4 w-4', isRefreshing && 'animate-spin']" />
                             Refresh
                         </Button>
+                        
+                        <!-- Pause Button -->
+                        <Button 
+                            v-if="canPause"
+                            variant="outline" 
+                            size="sm"
+                            class="gap-2 border-amber-200 text-amber-700 hover:bg-amber-50"
+                            @click="handlePause"
+                            :disabled="isPausing"
+                        >
+                            <Pause :class="['h-4 w-4', isPausing && 'animate-pulse']" />
+                            Pause
+                        </Button>
+                        
+                        <!-- Resume Button -->
+                        <Button 
+                            v-if="canResume"
+                            variant="outline" 
+                            size="sm"
+                            class="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                            @click="handleResume"
+                            :disabled="isResuming"
+                        >
+                            <Play :class="['h-4 w-4', isResuming && 'animate-pulse']" />
+                            Resume
+                        </Button>
+                        
+                        <!-- Retry/Start Button -->
+                        <Button 
+                            v-if="canRetry"
+                            variant="outline" 
+                            size="sm"
+                            class="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                            @click="handleRetry"
+                            :disabled="isRetrying"
+                        >
+                            <PlayCircle :class="['h-4 w-4', isRetrying && 'animate-pulse']" />
+                            {{ liveData.status === 'pending' ? 'Start' : 'Retry' }}
+                        </Button>
+                        
                         <Button 
                             size="sm"
                             class="gap-2 bg-slate-900 hover:bg-slate-800"
@@ -211,19 +383,30 @@ const handleRefresh = async () => {
                                 </div>
                             </div>
                         </div>
-                        <div 
-                            :class="[
-                                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold',
-                                currentStatus.bgColor,
-                                currentStatus.textColor,
-                                currentStatus.borderColor
-                            ]"
-                        >
-                            <component 
-                                :is="currentStatus.icon" 
-                                :class="['h-4 w-4', liveData.status === 'processing' && 'animate-spin']"
-                            />
-                            {{ currentStatus.label }}
+                        <div class="flex items-center gap-3">
+                            <div 
+                                :class="[
+                                    'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold',
+                                    currentStatus.bgColor,
+                                    currentStatus.textColor,
+                                    currentStatus.borderColor
+                                ]"
+                            >
+                                <component 
+                                    :is="currentStatus.icon" 
+                                    :class="['h-4 w-4', liveData.status === 'processing' && !isPaused && 'animate-spin']"
+                                />
+                                {{ isPaused ? 'Paused' : currentStatus.label }}
+                            </div>
+                            
+                            <!-- Paused Badge -->
+                            <div 
+                                v-if="isPaused"
+                                class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700"
+                            >
+                                <Pause class="h-4 w-4" />
+                                Paused
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -302,7 +485,7 @@ const handleRefresh = async () => {
             </div>
 
             <!-- Campaign Details Table -->
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 bg-slate-50 px-6 py-4">
                     <h2 class="text-lg font-semibold text-slate-900">Campaign Details</h2>
                 </div>
@@ -409,6 +592,105 @@ const handleRefresh = async () => {
                                     <div class="flex items-center gap-2 text-sm text-slate-700">
                                         <Calendar class="h-4 w-4 text-slate-400" />
                                         {{ formatDate(campaign.scheduledTime) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recipients Table -->
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 bg-slate-50 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-slate-900">Recipients</h2>
+                    <p class="mt-1 text-sm text-slate-500">List of all phone numbers and their sending status</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-100 bg-slate-50/50">
+                                <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                    Phone Number
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                    Status
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                    Message ID
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                    Error
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr 
+                                v-for="(result, index) in liveData.results" 
+                                :key="index"
+                                class="transition-colors hover:bg-slate-50/50"
+                            >
+                                <!-- Phone Number -->
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <Phone class="h-4 w-4 text-slate-400" />
+                                        <span class="text-sm font-medium text-slate-900">{{ result.phone }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="whitespace-nowrap px-6 py-4 text-center">
+                                    <span
+                                        v-if="result.skipped"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                                    >
+                                        <Ban class="h-3.5 w-3.5" />
+                                        Skipped
+                                    </span>
+                                    <span
+                                        v-else-if="result.success"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                                    >
+                                        <CheckCircle2 class="h-3.5 w-3.5" />
+                                        Sent
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"
+                                    >
+                                        <XCircle class="h-3.5 w-3.5" />
+                                        Failed
+                                    </span>
+                                </td>
+
+                                <!-- Message ID -->
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <span v-if="result.message_id" class="text-xs font-mono text-slate-600">
+                                        {{ result.message_id }}
+                                    </span>
+                                    <span v-else class="text-xs text-slate-400">—</span>
+                                </td>
+
+                                <!-- Error -->
+                                <td class="px-6 py-4">
+                                    <span v-if="result.error" class="text-xs text-red-600">
+                                        {{ result.error }}
+                                    </span>
+                                    <span v-else class="text-xs text-slate-400">—</span>
+                                </td>
+                            </tr>
+
+                            <!-- Empty State -->
+                            <tr v-if="liveData.results.length === 0">
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center gap-3">
+                                        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                                            <MessageSquare class="h-6 w-6 text-slate-400" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-900">No recipients yet</p>
+                                            <p class="text-xs text-slate-500">Recipients will appear here as messages are sent</p>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

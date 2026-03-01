@@ -35,11 +35,12 @@ const templates = ref<Template[]>([]);
 const isLoadingTemplates = ref(true);
 const templatesError = ref<string | null>(null);
 
-// Form state
+// Form state (language must match template's language in Meta to avoid #132001)
 const form = useForm({
     name: 'New broadcast',
     template: '',
     templateName: '',
+    language: 'en_US',
     usersPerMinute: 60,
     sendTime: 'now',
     file: null as File | null,
@@ -78,16 +79,18 @@ const fetchTemplates = async () => {
     }
 };
 
-// Handle template selection
+// Handle template selection (use template's exact language code to avoid #132001)
 const handleTemplateSelect = (event: Event) => {
     const select = event.target as HTMLSelectElement;
     const selectedTemplate = templates.value.find(t => t.name === select.value);
     if (selectedTemplate) {
         form.template = selectedTemplate.name;
         form.templateName = selectedTemplate.name;
+        form.language = selectedTemplate.language || 'en_US';
     } else {
         form.template = '';
         form.templateName = '';
+        form.language = 'en_US';
     }
 };
 
@@ -176,7 +179,7 @@ const handleSend = async () => {
                 name: form.name,
                 phone_numbers: phoneNumbers.value,
                 template_name: form.template,
-                language: 'en',
+                language: form.language || 'en_US',
                 delay_seconds: Math.round(60 / form.usersPerMinute),
             }),
         });

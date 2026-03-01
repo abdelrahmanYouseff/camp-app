@@ -8,6 +8,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class WhatsAppController extends Controller
 {
@@ -42,13 +43,18 @@ class WhatsAppController extends Controller
             'delay_seconds' => 'nullable|integer|min:1',
         ]);
 
-        // Create campaign record
+        $inputPhoneNumbers = $request->input('phone_numbers');
+        
+        // Allow sending to same phone numbers multiple times
+        // No filtering of duplicate phone numbers from previous campaigns
+
+        // Create campaign record with all phone numbers
         $campaign = Campaign::create([
             'name' => $request->input('name'),
             'template_name' => $request->input('template_name'),
-            'language' => $request->input('language', 'en'),
-            'phone_numbers' => $request->input('phone_numbers'),
-            'total_recipients' => count($request->input('phone_numbers')),
+            'language' => $request->input('language', 'en_US'),
+            'phone_numbers' => $inputPhoneNumbers,
+            'total_recipients' => count($inputPhoneNumbers),
             'delay_seconds' => $request->input('delay_seconds', 1),
             'status' => 'pending',
         ]);
@@ -87,6 +93,96 @@ class WhatsAppController extends Controller
         return response()->json([
             'success' => true,
             'campaigns' => $campaigns,
+        ]);
+    }
+
+    /**
+     * Pause a campaign
+     */
+    public function pauseCampaign(Campaign $campaign): JsonResponse
+    {
+        if ($campaign->status !== 'processing') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Campaign is not processing',
+            ], 400);
+        }
+
+        $campaign->pause();
+
+        Log::info('Campaign paused', ['campaign_id' => $campaign->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Campaign paused successfully',
+            'campaign' => $campaign->fresh(),
+        ]);
+    }
+
+    /**
+     * Resume a paused campaign
+     */
+    public function resumeCampaign(Campaign $campaign): JsonResponse
+    {
+        if (!$campaign->isPaused()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Campaign is not paused',
+            ], 400);
+        }
+
+        $campaign->resume();
+
+        // Dispatch job to continue processing
+        SendCampaignJob::dispatch($campaign);
+
+        Log::info('Campaign resumed', ['campaign_id' => $campaign->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Campaign resumed successfully',
+            'campaign' => $campaign->fresh(),
+        ]);
+    }
+
+    /**
+     * Retry/Start a pending campaign
+     */
+    public function retryCampaign(Campaign $campaign): JsonResponse
+    {
+        if ($campaign->status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Campaign is already completed',
+            ], 400);
+        }
+
+        if ($campaign->status === 'processing' && !$campaign->isPaused()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Campaign is already processing',
+            ], 400);
+        }
+
+        // If paused, resume it
+        if ($campaign->isPaused()) {
+            $campaign->resume();
+        }
+
+        // Update status to pending if needed
+        if ($campaign->status !== 'pending' && $campaign->status !== 'processing') {
+            $campaign->update(['status' => 'pending']);
+        }
+
+        // Dispatch job to start/continue processing
+        SendCampaignJob::dispatch($campaign);
+
+        Log::info('Campaign job dispatched', ['campaign_id' => $campaign->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Campaign job dispatched successfully',
+            'campaign' => $campaign->fresh(),
         ]);
     }
 }

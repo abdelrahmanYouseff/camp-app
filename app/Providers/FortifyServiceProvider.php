@@ -78,13 +78,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
-        // Skip rate limiting configuration if database is not available (e.g., during build)
-        try {
-            \Illuminate\Support\Facades\DB::connection()->getPdo();
-        } catch (\Exception $e) {
-            return;
-        }
-
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
