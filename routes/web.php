@@ -11,6 +11,11 @@ Route::get('/', function () {
     return Inertia::render('Campaigns');
 })->name('home');
 
+// App Settings (blank page)
+Route::get('/settings-app', function () {
+    return Inertia::render('AppSettings');
+})->name('settings.app');
+
 // New Campaign
 Route::get('/new', function () {
     return Inertia::render('CampaignSender');
@@ -43,6 +48,11 @@ Route::get('/api/campaigns', [WhatsAppController::class, 'getCampaigns'])->name(
 Route::post('/api/campaign/{campaign}/pause', [WhatsAppController::class, 'pauseCampaign'])->name('api.campaign.pause');
 Route::post('/api/campaign/{campaign}/resume', [WhatsAppController::class, 'resumeCampaign'])->name('api.campaign.resume');
 Route::post('/api/campaign/{campaign}/retry', [WhatsAppController::class, 'retryCampaign'])->name('api.campaign.retry');
+
+Route::get('/api/settings/whatsapp-phone-numbers', [WhatsAppController::class, 'whatsappPhoneNumbers'])->name('api.settings.whatsapp-phones');
+Route::post('/api/settings/active-whatsapp-phone', [WhatsAppController::class, 'setActiveWhatsAppPhone'])->name('api.settings.set-active-phone');
+Route::post('/api/settings/whatsapp-accounts', [WhatsAppController::class, 'storeWhatsAppAccount'])->name('api.settings.whatsapp-accounts.store');
+Route::patch('/api/settings/whatsapp-accounts/{account}/label', [WhatsAppController::class, 'updateWhatsAppAccountLabel'])->name('api.settings.whatsapp-accounts.label');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');

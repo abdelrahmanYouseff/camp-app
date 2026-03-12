@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\SendCampaignJob;
 use App\Models\Campaign;
+use App\Models\WhatsAppAccount;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -183,6 +184,133 @@ class WhatsAppController extends Controller
             'success' => true,
             'message' => 'Campaign job dispatched successfully',
             'campaign' => $campaign->fresh(),
+        ]);
+    }
+
+    /**
+     * List WhatsApp phone numbers and current sending number
+     */
+    public function whatsappPhoneNumbers(): JsonResponse
+    {
+        try {
+            $phones = $this->whatsApp->getPhoneNumbers();
+            $activeId = $this->whatsApp->getActivePhoneNumberId();
+
+            return response()->json([
+                'success' => true,
+                'phone_numbers' => $phones,
+                'active_phone_number_id' => $activeId,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('whatsappPhoneNumbers failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Set which phone number is used for sending (by account id from DB)
+     */
+    public function setActiveWhatsAppPhone(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone_number_id' => 'required', // can be string (legacy) or numeric (whatsapp_accounts.id)
+        ]);
+
+        $idOrPhoneNumberId = $request->input('phone_number_id');
+
+        if (is_numeric($idOrPhoneNumberId) && WhatsAppAccount::where('id', (int) $idOrPhoneNumberId)->exists()) {
+            WhatsAppAccount::query()->update(['is_active' => false]);
+            WhatsAppAccount::where('id', (int) $idOrPhoneNumberId)->update(['is_active' => true]);
+            return response()->json([
+                'success' => true,
+                'active_phone_number_id' => (string) $idOrPhoneNumberId,
+            ]);
+        }
+
+        $phones = $this->whatsApp->getPhoneNumbers();
+        $ids = array_column($phones, 'id');
+        if (! in_array($idOrPhoneNumberId, $ids, true)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Phone number not in your WhatsApp account',
+            ], 400);
+        }
+
+        $key = WhatsAppService::SETTING_ACTIVE_PHONE_NUMBER_ID;
+        $exists = DB::table('settings')->where('key', $key)->exists();
+        if ($exists) {
+            DB::table('settings')->where('key', $key)->update(['value' => $idOrPhoneNumberId, 'updated_at' => now()]);
+        } else {
+            DB::table('settings')->insert([
+                'key' => $key,
+                'value' => $idOrPhoneNumberId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'active_phone_number_id' => $idOrPhoneNumberId,
+        ]);
+    }
+
+    /**
+     * Add a new WhatsApp account (phone number + credentials)
+     */
+    public function storeWhatsAppAccount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone_number' => 'required|string|max:32',
+            'label' => 'nullable|string|max:255',
+            'phone_number_id' => 'required|string|max:64',
+            'business_account_id' => 'required|string|max:64',
+            'access_token' => 'required|string',
+        ]);
+
+        $isFirst = ! WhatsAppAccount::exists();
+
+        $account = WhatsAppAccount::create([
+            'phone_number' => $request->input('phone_number'),
+            'label' => $request->input('label') ? trim($request->input('label')) : null,
+            'phone_number_id' => $request->input('phone_number_id'),
+            'business_account_id' => $request->input('business_account_id'),
+            'access_token' => $request->input('access_token'),
+            'is_active' => $isFirst,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'account' => [
+                'id' => $account->id,
+                'phone_number' => $account->phone_number,
+                'label' => $account->label,
+                'phone_number_id' => $account->phone_number_id,
+                'business_account_id' => $account->business_account_id,
+                'is_active' => $account->is_active,
+            ],
+        ]);
+    }
+
+    /**
+     * Update WhatsApp account label (اسم/وصف الرقم)
+     */
+    public function updateWhatsAppAccountLabel(Request $request, WhatsAppAccount $account): JsonResponse
+    {
+        $request->validate([
+            'label' => 'nullable|string|max:255',
+        ]);
+
+        $account->update([
+            'label' => $request->input('label') ? trim($request->input('label')) : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'label' => $account->label,
         ]);
     }
 }

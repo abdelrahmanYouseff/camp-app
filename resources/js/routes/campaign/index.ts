@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 export const newMethod = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ newMethod.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 newMethod.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ newMethod.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 newMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -31,7 +31,7 @@ newMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 newMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -40,7 +40,7 @@ newMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 const newMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -49,7 +49,7 @@ const newMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> 
 })
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 newMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -58,7 +58,7 @@ newMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =>
 })
 
 /**
-* @see routes/web.php:15
+* @see routes/web.php:20
 * @route '/new'
 */
 newMethodForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

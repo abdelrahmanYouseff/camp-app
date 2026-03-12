@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\WhatsAppAccount;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class WhatsAppService
 {
@@ -11,6 +14,8 @@ class WhatsAppService
     protected string $accessToken;
     protected string $phoneNumberId;
     protected string $businessAccountId;
+
+    public const SETTING_ACTIVE_PHONE_NUMBER_ID = 'active_whatsapp_phone_number_id';
 
     public function __construct()
     {
@@ -20,13 +25,102 @@ class WhatsAppService
     }
 
     /**
+     * Active credentials for API calls (from whatsapp_accounts or .env).
+     * @return array{access_token: string, phone_number_id: string, business_account_id: string}
+     */
+    protected function getActiveCredentials(): array
+    {
+        if (Schema::hasTable('whatsapp_accounts')) {
+            $account = WhatsAppAccount::active()->first();
+            if ($account) {
+                return [
+                    'access_token' => $account->access_token,
+                    'phone_number_id' => $account->phone_number_id,
+                    'business_account_id' => $account->business_account_id,
+                ];
+            }
+        }
+
+        $phoneId = $this->getPhoneNumberIdForSending();
+        if (Schema::hasTable('settings')) {
+            $active = DB::table('settings')->where('key', self::SETTING_ACTIVE_PHONE_NUMBER_ID)->value('value');
+            if ($active) {
+                $phoneId = $active;
+            }
+        }
+
+        return [
+            'access_token' => $this->accessToken,
+            'phone_number_id' => $phoneId ?: $this->phoneNumberId,
+            'business_account_id' => $this->businessAccountId,
+        ];
+    }
+
+    /**
+     * Phone number ID used for sending (from active account, settings, or .env).
+     */
+    public function getPhoneNumberIdForSending(): string
+    {
+        $cred = $this->getActiveCredentials();
+        return $cred['phone_number_id'];
+    }
+
+    /**
+     * List WhatsApp accounts (from DB). If none, fallback to .env as single entry.
+     */
+    public function getPhoneNumbers(): array
+    {
+        if (Schema::hasTable('whatsapp_accounts')) {
+            $accounts = WhatsAppAccount::orderBy('is_active', 'desc')->orderBy('id')->get();
+            if ($accounts->isNotEmpty()) {
+                return $accounts->map(fn ($a) => [
+                    'id' => (string) $a->id,
+                    'display_phone_number' => $a->phone_number,
+                    'label' => $a->label,
+                    'phone_number_id' => $a->phone_number_id,
+                    'business_account_id' => $a->business_account_id,
+                    'is_active' => $a->is_active,
+                ])->all();
+            }
+        }
+
+        $display = config('services.whatsapp.phone_number', '');
+        return [
+            [
+                'id' => $this->phoneNumberId,
+                'display_phone_number' => $display ?: ('ID: ' . $this->phoneNumberId),
+                'label' => null,
+                'phone_number_id' => $this->phoneNumberId,
+                'business_account_id' => $this->businessAccountId,
+                'is_active' => true,
+            ],
+        ];
+    }
+
+    /**
+     * Active account ID for UI (DB id when using whatsapp_accounts, else phone_number_id).
+     */
+    public function getActivePhoneNumberId(): ?string
+    {
+        if (Schema::hasTable('whatsapp_accounts')) {
+            $account = WhatsAppAccount::active()->first();
+            return $account ? (string) $account->id : null;
+        }
+        if (Schema::hasTable('settings')) {
+            return DB::table('settings')->where('key', self::SETTING_ACTIVE_PHONE_NUMBER_ID)->value('value');
+        }
+        return $this->phoneNumberId;
+    }
+
+    /**
      * Get all message templates from WhatsApp Business API
      */
     public function getTemplates(): array
     {
+        $cred = $this->getActiveCredentials();
         try {
-            $response = Http::withToken($this->accessToken)
-                ->get("{$this->baseUrl}/{$this->businessAccountId}/message_templates");
+            $response = Http::withToken($cred['access_token'])
+                ->get("{$this->baseUrl}/{$cred['business_account_id']}/message_templates");
 
             if ($response->successful()) {
                 $templates = $response->json('data', []);
@@ -56,15 +150,26 @@ class WhatsAppService
     }
 
     /**
-     * Normalize language code for WhatsApp API (fixes #132001).
-     * Only expand "en" to "en_US"; pass all other codes from Meta as-is.
+     * Pass language as-is from Meta template list (no normalization).
+     * Fixes #132001 when template is registered as "en" but we were sending "en_US" or vice versa.
      */
     protected function normalizeLanguageCode(string $language): string
     {
-        if ($language === 'en') {
-            return 'en_US';
-        }
-        return $language;
+        return $language ?: 'en';
+    }
+
+    /**
+     * Alternate language code for 132001 retry (en <-> en_US, ar <-> ar_AR).
+     */
+    protected function getAlternateLanguageCode(string $code): ?string
+    {
+        $alternates = [
+            'en' => 'en_US',
+            'en_US' => 'en',
+            'ar' => 'ar_AR',
+            'ar_AR' => 'ar',
+        ];
+        return $alternates[$code] ?? null;
     }
 
     /**
@@ -96,8 +201,9 @@ class WhatsAppService
                 $payload['template']['components'] = $components;
             }
 
-            $response = Http::withToken($this->accessToken)
-                ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $payload);
+            $cred = $this->getActiveCredentials();
+            $response = Http::withToken($cred['access_token'])
+                ->post("{$this->baseUrl}/{$cred['phone_number_id']}/messages", $payload);
 
             $responseData = $response->json();
             $isSuccessful = $response->successful();
@@ -113,15 +219,41 @@ class WhatsAppService
 
             // Check for errors in response even if status is 200
             if (isset($responseData['error'])) {
-                $errorCode = $responseData['error']['code'] ?? null;
+                $errorCode = (int) ($responseData['error']['code'] ?? 0);
                 Log::error('WhatsApp API Error in Response', [
                     'to' => $to,
                     'template' => $templateName,
                     'language_sent' => $languageCode,
                     'error' => $responseData['error'],
                 ]);
-                if ((int) $errorCode === 132001) {
-                    Log::warning('132001: Template/language mismatch. Check in Meta: template name exactly "' . $templateName . '", language code "' . $languageCode . '"', [
+
+                // #132001: Template name does not exist in the translation — retry with alternate language code once
+                if ($errorCode === 132001) {
+                    $altCode = $this->getAlternateLanguageCode($languageCode);
+                    if ($altCode !== null) {
+                        Log::info('132001 retry with alternate language', [
+                            'template' => $templateName,
+                            'from' => $languageCode,
+                            'to' => $altCode,
+                        ]);
+                        $payload['template']['language']['code'] = $altCode;
+                        $retryResponse = Http::withToken($cred['access_token'])
+                            ->post("{$this->baseUrl}/{$cred['phone_number_id']}/messages", $payload);
+                        $retryData = $retryResponse->json();
+                        if ($retryResponse->successful() && ! isset($retryData['error'])) {
+                            Log::info('WhatsApp API Response (132001 retry succeeded)', [
+                                'to' => $to,
+                                'template' => $templateName,
+                                'language_used' => $altCode,
+                            ]);
+                            return [
+                                'success' => true,
+                                'data' => $retryData,
+                                'status' => $retryResponse->status(),
+                            ];
+                        }
+                    }
+                    Log::warning('132001: Template/language mismatch. Check in Meta: template "' . $templateName . '", language "' . $languageCode . '"', [
                         'payload_template' => $payload['template'],
                     ]);
                 }
@@ -188,8 +320,9 @@ class WhatsAppService
      */
     public function getMessageStatus(string $messageId): array
     {
+        $cred = $this->getActiveCredentials();
         try {
-            $response = Http::withToken($this->accessToken)
+            $response = Http::withToken($cred['access_token'])
                 ->get("{$this->baseUrl}/{$messageId}");
 
             return [

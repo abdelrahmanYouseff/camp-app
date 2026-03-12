@@ -292,7 +292,7 @@ homeForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 home.form = homeForm
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 export const campaignStatus = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -306,7 +306,7 @@ campaignStatus.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 campaignStatus.url = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -338,7 +338,7 @@ campaignStatus.url = (args: { campaign: number | { id: number } } | [campaign: n
 }
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 campaignStatus.get = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -347,7 +347,7 @@ campaignStatus.get = (args: { campaign: number | { id: number } } | [campaign: n
 })
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 campaignStatus.head = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -356,7 +356,7 @@ campaignStatus.head = (args: { campaign: number | { id: number } } | [campaign: 
 })
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 const campaignStatusForm = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -365,7 +365,7 @@ const campaignStatusForm = (args: { campaign: number | { id: number } } | [campa
 })
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 campaignStatusForm.get = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -374,7 +374,7 @@ campaignStatusForm.get = (args: { campaign: number | { id: number } } | [campaig
 })
 
 /**
-* @see routes/web.php:20
+* @see routes/web.php:25
 * @route '/campaign-status/{campaign}'
 */
 campaignStatusForm.head = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ campaignStatusForm.head = (args: { campaign: number | { id: number } } | [campai
 campaignStatus.form = campaignStatusForm
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 export const dashboard = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -404,7 +404,7 @@ dashboard.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 dashboard.url = (options?: RouteQueryOptions) => {
@@ -412,7 +412,7 @@ dashboard.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -421,7 +421,7 @@ dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -430,7 +430,7 @@ dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 const dashboardForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -439,7 +439,7 @@ const dashboardForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> 
 })
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 dashboardForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -448,7 +448,7 @@ dashboardForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =>
 })
 
 /**
-* @see routes/web.php:47
+* @see routes/web.php:57
 * @route '/dashboard'
 */
 dashboardForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

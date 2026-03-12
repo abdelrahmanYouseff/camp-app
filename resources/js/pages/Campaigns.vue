@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
-import { Plus, RefreshCw, Search, Info, MessageCircle } from 'lucide-vue-next';
+import { Plus, RefreshCw, Search, Info, MessageCircle, Settings } from 'lucide-vue-next';
 import Button from '@/components/ui/button/Button.vue';
 
 interface Campaign {
@@ -61,6 +61,14 @@ const formatDate = (dateString: string) => {
                 <div class="flex items-center gap-2">
                     <h1 class="text-lg font-semibold text-gray-900">Broadcasts</h1>
                     <Info class="h-4 w-4 text-gray-400 cursor-help" />
+                    <button
+                        type="button"
+                        @click="router.visit('/settings-app')"
+                        class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-colors"
+                        aria-label="Settings"
+                    >
+                        <Settings class="h-4 w-4" />
+                    </button>
                 </div>
                 
                 <div class="flex items-center gap-3">
