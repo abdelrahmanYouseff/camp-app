@@ -42,6 +42,7 @@ class WhatsAppController extends Controller
             'template_name' => 'required|string',
             'language' => 'nullable|string',
             'delay_seconds' => 'nullable|integer|min:1',
+            'image_media_id' => 'nullable|string',
         ]);
 
         $inputPhoneNumbers = $request->input('phone_numbers');
@@ -57,6 +58,7 @@ class WhatsAppController extends Controller
             'phone_numbers' => $inputPhoneNumbers,
             'total_recipients' => count($inputPhoneNumbers),
             'delay_seconds' => $request->input('delay_seconds', 1),
+            'image_media_id' => $request->input('image_media_id'),
             'status' => 'pending',
         ]);
 
@@ -311,6 +313,34 @@ class WhatsAppController extends Controller
         return response()->json([
             'success' => true,
             'label' => $account->label,
+        ]);
+    }
+
+    /**
+     * Upload an image to WhatsApp and return media_id for use in campaigns.
+     */
+    public function uploadCampaignImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => 'required|file|mimes:jpeg,jpg,png,webp|max:5120',
+        ]);
+
+        $file = $request->file('image');
+        $path = $file->getRealPath();
+        $mime = $file->getMimeType() ?? 'image/jpeg';
+
+        $mediaId = $this->whatsApp->uploadImageToWhatsApp($path, $mime);
+
+        if (! $mediaId) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to upload image to WhatsApp',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'media_id' => $mediaId,
         ]);
     }
 }

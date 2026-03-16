@@ -8,7 +8,8 @@ import {
     X,
     Minus,
     ChevronDown,
-    Loader2
+    Loader2,
+    Image as ImageIcon,
 } from 'lucide-vue-next';
 import Button from '@/components/ui/button/Button.vue';
 import Input from '@/components/ui/input/Input.vue';
@@ -22,6 +23,8 @@ interface Template {
     status: string;
     language: string;
     category: string;
+    // We keep components as any because it comes directly from WhatsApp API
+    components?: Array<{ type: string; text?: string }>;
 }
 
 // File upload state
@@ -30,10 +33,31 @@ const selectedFile = ref<File | null>(null);
 const phoneNumbersCount = ref<number>(0);
 const fileName = ref<string>('');
 
+// Image upload state
+const imageInput = ref<HTMLInputElement | null>(null);
+const selectedImage = ref<File | null>(null);
+const imagePreviewUrl = ref<string | null>(null);
+const imageUploadError = ref<string | null>(null);
+const imageUploading = ref(false);
+const imageMediaId = ref<string | null>(null);
+
 // Templates state
 const templates = ref<Template[]>([]);
 const isLoadingTemplates = ref(true);
 const templatesError = ref<string | null>(null);
+
+const selectedTemplateObject = computed<Template | null>(() => {
+    return templates.value.find(t => t.name === form.template) ?? null;
+});
+
+const templateBodyPreview = computed(() => {
+    const t = selectedTemplateObject.value;
+    if (!t || !t.components || !Array.isArray(t.components)) return '';
+    const body = t.components.find(c => c.type === 'BODY' || c.type === 'body');
+    if (!body || !body.text) return '';
+    // Replace variable placeholders {{1}} with ellipsis
+    return body.text.replace(/\{\{\d+\}\}/g, '…');
+});
 
 // Form state (language must match template's language in Meta to avoid #132001)
 const form = useForm({
@@ -41,6 +65,7 @@ const form = useForm({
     template: '',
     templateName: '',
     language: 'en_US',
+    image_media_id: null as string | null,
     usersPerMinute: 60,
     sendTime: 'now',
     file: null as File | null,
@@ -154,6 +179,59 @@ const clearFile = () => {
     if (fileInput.value) fileInput.value.value = '';
 };
 
+// Handle image selection and upload
+const handleImageSelect = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    imageUploadError.value = null;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        imageUploadError.value = 'Please upload a JPG, PNG, or WEBP image.';
+        return;
+    }
+
+    selectedImage.value = file;
+    if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
+    imagePreviewUrl.value = URL.createObjectURL(file);
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    imageUploading.value = true;
+    try {
+        const response = await fetch('/api/campaign/upload-image', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await response.json();
+        if (data.success && data.media_id) {
+            imageMediaId.value = data.media_id;
+            form.image_media_id = data.media_id;
+        } else {
+            imageUploadError.value = data.error || 'Failed to upload image to WhatsApp.';
+        }
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        imageUploadError.value = 'Failed to upload image. Please try again.';
+    } finally {
+        imageUploading.value = false;
+    }
+};
+
+const clearImage = () => {
+    selectedImage.value = null;
+    imageMediaId.value = null;
+    form.image_media_id = null;
+    if (imagePreviewUrl.value) {
+        URL.revokeObjectURL(imagePreviewUrl.value);
+        imagePreviewUrl.value = null;
+    }
+    if (imageInput.value) imageInput.value.value = '';
+};
+
 // Open file picker
 const openFilePicker = () => {
     if (!fileName.value && fileInput.value) {
@@ -180,6 +258,7 @@ const handleSend = async () => {
                 phone_numbers: phoneNumbers.value,
                 template_name: form.template,
                 language: form.language || 'en_US',
+                image_media_id: form.image_media_id,
                 delay_seconds: Math.round(60 / form.usersPerMinute),
             }),
         });
@@ -337,6 +416,67 @@ const sliderPercentage = computed(() => ((form.usersPerMinute - 1) / (1000 - 1))
                             <span>Add Condition</span>
                         </button>
                     </div>
+
+                    <!-- Optional Image Section -->
+                    <div class="rounded-lg bg-white p-5 shadow-sm">
+                        <div class="mb-3 flex items-center justify-between">
+                            <div>
+                                <Label class="text-sm font-medium text-gray-700">Optional image</Label>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    If the selected template has an image header, this image will be used.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                                <template v-if="imagePreviewUrl">
+                                    <img :src="imagePreviewUrl" alt="Preview" class="h-full w-full object-cover" />
+                                </template>
+                                <template v-else>
+                                    <ImageIcon class="h-7 w-7 text-gray-300" />
+                                </template>
+                            </div>
+                            <div class="flex-1 space-y-2">
+                                <input
+                                    ref="imageInput"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="hidden"
+                                    @change="handleImageSelect"
+                                />
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="border-gray-300 text-gray-700"
+                                        :disabled="imageUploading"
+                                        @click="imageInput && imageInput.click()"
+                                    >
+                                        <Loader2 v-if="imageUploading" class="mr-2 h-4 w-4 animate-spin" />
+                                        <template v-else>
+                                            <ImageIcon class="mr-2 h-4 w-4" />
+                                            Upload image
+                                        </template>
+                                    </Button>
+                                    <button
+                                        v-if="selectedImage"
+                                        type="button"
+                                        class="text-xs text-gray-500 hover:text-gray-700"
+                                        @click="clearImage"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                                <p v-if="selectedImage" class="text-xs text-gray-500">
+                                    {{ selectedImage.name }}
+                                </p>
+                                <p v-if="imageUploadError" class="text-xs text-red-600">
+                                    {{ imageUploadError }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Right Column -->
@@ -476,6 +616,81 @@ const sliderPercentage = computed(() => ((form.usersPerMinute - 1) / (1000 - 1))
                             Saving...
                         </span>
                     </Button>
+
+                    <!-- WhatsApp Preview -->
+                    <div class="mt-4 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+                        <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                            WhatsApp preview
+                        </p>
+                        <!-- Phone frame -->
+                        <div class="relative mx-auto w-full max-w-[270px]">
+                            <!-- Outer phone body -->
+                            <div class="rounded-[2.5rem] border border-gray-300 bg-neutral-100 p-2 shadow-xl shadow-gray-300/70">
+                                <!-- Inner screen -->
+                                <div class="relative h-[460px] rounded-[2rem] bg-[#f0f2f5] text-slate-900 overflow-hidden">
+                                    <!-- Notch / sensors -->
+                                    <div class="pointer-events-none absolute left-1/2 top-2 z-20 flex -translate-x-1/2 items-center gap-6 text-[8px] text-gray-400">
+                                        <div class="flex items-center gap-1">
+                                            <span class="inline-block h-1 w-6 rounded-full bg-black/60"></span>
+                                            <span class="inline-block h-2 w-2 rounded-full bg-black/70"></span>
+                                        </div>
+                                        <span class="font-medium">9:41</span>
+                                        <div class="flex items-center gap-0.5">
+                                            <span class="inline-block h-1 w-3 rounded-full bg-white/70"></span>
+                                            <span class="inline-block h-2 w-3 rounded-[3px] border border-white/60">
+                                                <span class="block h-full w-1.5 bg-white/80"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex h-full flex-col rounded-[2rem] overflow-hidden">
+                                        <!-- Chat header -->
+                                        <div class="mt-5 flex items-center gap-2 bg-white/95 px-3 py-2.5 text-xs shadow-sm">
+                                            <div class="h-7 w-7 rounded-full bg-[#e4e6eb] ring-1 ring-white/60" />
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate text-[11px] font-semibold">
+                                                    {{ selectedTemplateObject?.name || 'WhatsApp Contact' }}
+                                                </p>
+                                                <p class="text-[10px] text-emerald-500">
+                                                    online
+                                                </p>
+                                            </div>
+                                            <div class="flex items-center gap-1 text-[9px] text-gray-400">
+                                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                                <span>WA</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Chat area -->
+                                        <div class="flex-1 bg-[url('https://static.whatsapp.net/rsrc.php/v4/yb/r/_YUsG-2D_Dg.png')] bg-cover bg-center/140 px-3 pb-3 pt-4 text-[11px] leading-snug">
+                                            <div class="space-y-2">
+                                                <!-- Image bubble -->
+                                                <div v-if="imagePreviewUrl" class="flex justify-start">
+                                                    <div class="max-w-[78%] overflow-hidden rounded-xl bg-white ring-1 ring-black/5 shadow-sm">
+                                                        <img :src="imagePreviewUrl" alt="Image preview" class="h-32 w-full object-cover" />
+                                                    </div>
+                                                </div>
+                                                <!-- Text bubble -->
+                                                <div class="flex justify-start">
+                                                    <div class="max-w-[80%] rounded-xl rounded-bl-sm bg-white px-3 py-2 text-[11px] text-slate-900 shadow-sm shadow-black/10 border border-gray-200/80">
+                                                        <p v-if="templateBodyPreview">
+                                                            {{ templateBodyPreview }}
+                                                        </p>
+                                                        <p v-else class="text-gray-400">
+                                                            Choose a template to see how the message will look here.
+                                                        </p>
+                                                        <div class="mt-1 flex justify-end text-[9px] text-gray-400">
+                                                            <span>09:41</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

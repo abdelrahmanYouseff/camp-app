@@ -48,6 +48,7 @@ Route::get('/api/campaigns', [WhatsAppController::class, 'getCampaigns'])->name(
 Route::post('/api/campaign/{campaign}/pause', [WhatsAppController::class, 'pauseCampaign'])->name('api.campaign.pause');
 Route::post('/api/campaign/{campaign}/resume', [WhatsAppController::class, 'resumeCampaign'])->name('api.campaign.resume');
 Route::post('/api/campaign/{campaign}/retry', [WhatsAppController::class, 'retryCampaign'])->name('api.campaign.retry');
+Route::post('/api/campaign/upload-image', [WhatsAppController::class, 'uploadCampaignImage'])->name('api.campaign.upload-image');
 
 Route::get('/api/settings/whatsapp-phone-numbers', [WhatsAppController::class, 'whatsappPhoneNumbers'])->name('api.settings.whatsapp-phones');
 Route::post('/api/settings/active-whatsapp-phone', [WhatsAppController::class, 'setActiveWhatsAppPhone'])->name('api.settings.set-active-phone');

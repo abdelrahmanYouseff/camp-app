@@ -154,6 +154,8 @@ class SendCampaignJob implements ShouldQueue
         // Process phone numbers starting from last processed index
         $phoneNumbers = array_slice($this->campaign->phone_numbers, $startIndex);
         
+        $imageMediaId = $this->campaign->image_media_id ?? null;
+
         foreach ($phoneNumbers as $relativeIndex => $phone) {
             $index = $startIndex + $relativeIndex;
             
@@ -178,10 +180,26 @@ class SendCampaignJob implements ShouldQueue
             // No skipping of duplicate phone numbers
             
             try {
+                $components = [];
+                if ($imageMediaId) {
+                    $components[] = [
+                        'type' => 'header',
+                        'parameters' => [
+                            [
+                                'type' => 'image',
+                                'image' => [
+                                    'id' => $imageMediaId,
+                                ],
+                            ],
+                        ],
+                    ];
+                }
+
                 $result = $whatsApp->sendTemplate(
                     $phone,
                     $this->campaign->template_name,
-                    $this->campaign->language
+                    $this->campaign->language,
+                    $components
                 );
 
                 // Check if response is successful and has valid message data

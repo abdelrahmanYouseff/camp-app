@@ -41,7 +41,8 @@ class WhatsAppService
             }
         }
 
-        $phoneId = $this->getPhoneNumberIdForSending();
+        // Fallback to .env values, optionally overridden by settings table
+        $phoneId = $this->phoneNumberId;
         if (Schema::hasTable('settings')) {
             $active = DB::table('settings')->where('key', self::SETTING_ACTIVE_PHONE_NUMBER_ID)->value('value');
             if ($active) {
@@ -147,6 +148,39 @@ class WhatsAppService
 
             return [];
         }
+    }
+
+    /**
+     * Upload an image file to WhatsApp and return media ID.
+     */
+    public function uploadImageToWhatsApp(string $path, string $mimeType): ?string
+    {
+        $cred = $this->getActiveCredentials();
+
+        try {
+            $response = Http::withToken($cred['access_token'])
+                ->asMultipart()
+                ->attach('file', fopen($path, 'r'), basename($path), ['Content-Type' => $mimeType])
+                ->post("{$this->baseUrl}/{$cred['phone_number_id']}/media", [
+                    'messaging_product' => 'whatsapp',
+                    'type' => 'image',
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('id');
+            }
+
+            Log::error('WhatsApp media upload error', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('WhatsApp media upload exception', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
     }
 
     /**

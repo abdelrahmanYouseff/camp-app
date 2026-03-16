@@ -17,6 +17,7 @@ class Campaign extends Model
         'phone_numbers',
         'results',
         'delay_seconds',
+        'image_media_id',
         'max_sends',
         'started_at',
         'completed_at',

@@ -57,7 +57,7 @@ send.form = sendForm
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 export const status = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -72,7 +72,7 @@ status.definition = {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 status.url = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -105,7 +105,7 @@ status.url = (args: { campaign: number | { id: number } } | [campaign: number | 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 status.get = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -115,7 +115,7 @@ status.get = (args: { campaign: number | { id: number } } | [campaign: number | 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 status.head = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -125,7 +125,7 @@ status.head = (args: { campaign: number | { id: number } } | [campaign: number |
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 const statusForm = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -135,7 +135,7 @@ const statusForm = (args: { campaign: number | { id: number } } | [campaign: num
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 statusForm.get = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -145,7 +145,7 @@ statusForm.get = (args: { campaign: number | { id: number } } | [campaign: numbe
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::status
-* @see app/Http/Controllers/WhatsAppController.php:78
+* @see app/Http/Controllers/WhatsAppController.php:80
 * @route '/api/campaign/{campaign}'
 */
 statusForm.head = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -162,7 +162,7 @@ status.form = statusForm
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::pause
-* @see app/Http/Controllers/WhatsAppController.php:103
+* @see app/Http/Controllers/WhatsAppController.php:105
 * @route '/api/campaign/{campaign}/pause'
 */
 export const pause = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -177,7 +177,7 @@ pause.definition = {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::pause
-* @see app/Http/Controllers/WhatsAppController.php:103
+* @see app/Http/Controllers/WhatsAppController.php:105
 * @route '/api/campaign/{campaign}/pause'
 */
 pause.url = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -210,7 +210,7 @@ pause.url = (args: { campaign: number | { id: number } } | [campaign: number | {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::pause
-* @see app/Http/Controllers/WhatsAppController.php:103
+* @see app/Http/Controllers/WhatsAppController.php:105
 * @route '/api/campaign/{campaign}/pause'
 */
 pause.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -220,7 +220,7 @@ pause.post = (args: { campaign: number | { id: number } } | [campaign: number | 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::pause
-* @see app/Http/Controllers/WhatsAppController.php:103
+* @see app/Http/Controllers/WhatsAppController.php:105
 * @route '/api/campaign/{campaign}/pause'
 */
 const pauseForm = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -230,7 +230,7 @@ const pauseForm = (args: { campaign: number | { id: number } } | [campaign: numb
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::pause
-* @see app/Http/Controllers/WhatsAppController.php:103
+* @see app/Http/Controllers/WhatsAppController.php:105
 * @route '/api/campaign/{campaign}/pause'
 */
 pauseForm.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -242,7 +242,7 @@ pause.form = pauseForm
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::resume
-* @see app/Http/Controllers/WhatsAppController.php:126
+* @see app/Http/Controllers/WhatsAppController.php:128
 * @route '/api/campaign/{campaign}/resume'
 */
 export const resume = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -257,7 +257,7 @@ resume.definition = {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::resume
-* @see app/Http/Controllers/WhatsAppController.php:126
+* @see app/Http/Controllers/WhatsAppController.php:128
 * @route '/api/campaign/{campaign}/resume'
 */
 resume.url = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -290,7 +290,7 @@ resume.url = (args: { campaign: number | { id: number } } | [campaign: number | 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::resume
-* @see app/Http/Controllers/WhatsAppController.php:126
+* @see app/Http/Controllers/WhatsAppController.php:128
 * @route '/api/campaign/{campaign}/resume'
 */
 resume.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -300,7 +300,7 @@ resume.post = (args: { campaign: number | { id: number } } | [campaign: number |
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::resume
-* @see app/Http/Controllers/WhatsAppController.php:126
+* @see app/Http/Controllers/WhatsAppController.php:128
 * @route '/api/campaign/{campaign}/resume'
 */
 const resumeForm = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -310,7 +310,7 @@ const resumeForm = (args: { campaign: number | { id: number } } | [campaign: num
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::resume
-* @see app/Http/Controllers/WhatsAppController.php:126
+* @see app/Http/Controllers/WhatsAppController.php:128
 * @route '/api/campaign/{campaign}/resume'
 */
 resumeForm.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -322,7 +322,7 @@ resume.form = resumeForm
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::retry
-* @see app/Http/Controllers/WhatsAppController.php:152
+* @see app/Http/Controllers/WhatsAppController.php:154
 * @route '/api/campaign/{campaign}/retry'
 */
 export const retry = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -337,7 +337,7 @@ retry.definition = {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::retry
-* @see app/Http/Controllers/WhatsAppController.php:152
+* @see app/Http/Controllers/WhatsAppController.php:154
 * @route '/api/campaign/{campaign}/retry'
 */
 retry.url = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -370,7 +370,7 @@ retry.url = (args: { campaign: number | { id: number } } | [campaign: number | {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::retry
-* @see app/Http/Controllers/WhatsAppController.php:152
+* @see app/Http/Controllers/WhatsAppController.php:154
 * @route '/api/campaign/{campaign}/retry'
 */
 retry.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -380,7 +380,7 @@ retry.post = (args: { campaign: number | { id: number } } | [campaign: number | 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::retry
-* @see app/Http/Controllers/WhatsAppController.php:152
+* @see app/Http/Controllers/WhatsAppController.php:154
 * @route '/api/campaign/{campaign}/retry'
 */
 const retryForm = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -390,7 +390,7 @@ const retryForm = (args: { campaign: number | { id: number } } | [campaign: numb
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::retry
-* @see app/Http/Controllers/WhatsAppController.php:152
+* @see app/Http/Controllers/WhatsAppController.php:154
 * @route '/api/campaign/{campaign}/retry'
 */
 retryForm.post = (args: { campaign: number | { id: number } } | [campaign: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -400,12 +400,69 @@ retryForm.post = (args: { campaign: number | { id: number } } | [campaign: numbe
 
 retry.form = retryForm
 
+/**
+* @see \App\Http\Controllers\WhatsAppController::uploadImage
+* @see app/Http/Controllers/WhatsAppController.php:322
+* @route '/api/campaign/upload-image'
+*/
+export const uploadImage = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadImage.url(options),
+    method: 'post',
+})
+
+uploadImage.definition = {
+    methods: ["post"],
+    url: '/api/campaign/upload-image',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\WhatsAppController::uploadImage
+* @see app/Http/Controllers/WhatsAppController.php:322
+* @route '/api/campaign/upload-image'
+*/
+uploadImage.url = (options?: RouteQueryOptions) => {
+    return uploadImage.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\WhatsAppController::uploadImage
+* @see app/Http/Controllers/WhatsAppController.php:322
+* @route '/api/campaign/upload-image'
+*/
+uploadImage.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadImage.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\WhatsAppController::uploadImage
+* @see app/Http/Controllers/WhatsAppController.php:322
+* @route '/api/campaign/upload-image'
+*/
+const uploadImageForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: uploadImage.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\WhatsAppController::uploadImage
+* @see app/Http/Controllers/WhatsAppController.php:322
+* @route '/api/campaign/upload-image'
+*/
+uploadImageForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: uploadImage.url(options),
+    method: 'post',
+})
+
+uploadImage.form = uploadImageForm
+
 const campaign = {
     send: Object.assign(send, send),
     status: Object.assign(status, status),
     pause: Object.assign(pause, pause),
     resume: Object.assign(resume, resume),
     retry: Object.assign(retry, retry),
+    uploadImage: Object.assign(uploadImage, uploadImage),
 }
 
 export default campaign

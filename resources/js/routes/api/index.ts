@@ -84,7 +84,7 @@ templates.form = templatesForm
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 export const campaigns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -99,7 +99,7 @@ campaigns.definition = {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 campaigns.url = (options?: RouteQueryOptions) => {
@@ -108,7 +108,7 @@ campaigns.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 campaigns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -118,7 +118,7 @@ campaigns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 campaigns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -128,7 +128,7 @@ campaigns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 const campaignsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -138,7 +138,7 @@ const campaignsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> 
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 campaignsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -148,7 +148,7 @@ campaignsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =>
 
 /**
 * @see \App\Http\Controllers\WhatsAppController::campaigns
-* @see app/Http/Controllers/WhatsAppController.php:90
+* @see app/Http/Controllers/WhatsAppController.php:92
 * @route '/api/campaigns'
 */
 campaignsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
